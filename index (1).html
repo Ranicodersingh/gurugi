@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="theme-color" content="#0d0a1a"/>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Guruji">
+<title>Guruji</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="style.css"/>
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+</head>
+<body>
+<!-- ══ LOGIN SCREEN ══ -->
+<div id="loginScreen" style="display:none;position:fixed;inset:0;z-index:99998;background:var(--bg);flex-direction:column;align-items:center;justify-content:center;padding:24px;">
+  <div style="width:100%;max-width:400px;">
+    <!-- Logo -->
+    <div style="text-align:center;margin-bottom:32px;">
+      <div style="font-size:52px;margin-bottom:8px;animation:namasteBow 1.2s ease infinite alternate;">🎤</div>
+      <div style="font-size:28px;font-weight:900;font-family:'Outfit',sans-serif;background:linear-gradient(135deg,#c084fc,#f59e0b);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">Guru<b>Ji</b></div>
+      <div style="font-size:13px;color:#9d8ec0;margin-top:4px;font-family:'Outfit',sans-serif;">Singing Teacher Manager</div>
+    </div>
+
+    <!-- Card -->
+    <div style="background:#1a1530;border:1px solid #2e2850;border-radius:20px;padding:24px;">
+      <div style="font-size:16px;font-weight:800;color:#f0ebff;margin-bottom:6px;font-family:'Outfit',sans-serif;">Welcome, Guru Ji 🙏</div>
+      <div style="font-size:12px;color:#9d8ec0;margin-bottom:20px;font-family:'Outfit',sans-serif;">Sign in to access your students & schedule</div>
+
+      <!-- Email -->
+      <div style="margin-bottom:12px;">
+        <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#9d8ec0;font-family:'Outfit',sans-serif;">Email</label>
+        <input id="authEmail" type="email" placeholder="your@email.com" onkeydown="if(event.key==='Enter')document.getElementById('authPass').focus()"
+          style="width:100%;margin-top:5px;padding:12px 14px;background:#0d0a1a;border:1px solid #2e2850;border-radius:11px;color:#f0ebff;font-size:14px;font-family:'Outfit',sans-serif;outline:none;"/>
+      </div>
+
+      <!-- Password -->
+      <div style="margin-bottom:6px;">
+        <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#9d8ec0;font-family:'Outfit',sans-serif;">Password</label>
+        <div style="position:relative;margin-top:5px;">
+          <input id="authPass" type="password" placeholder="Min. 6 characters" onkeydown="if(event.key==='Enter')signInEmail()"
+            style="width:100%;padding:12px 44px 12px 14px;background:#0d0a1a;border:1px solid #2e2850;border-radius:11px;color:#f0ebff;font-size:14px;font-family:'Outfit',sans-serif;outline:none;"/>
+          <button onclick="const i=document.getElementById('authPass');i.type=i.type==='password'?'text':'password'" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:16px;color:#9d8ec0;">👁</button>
+        </div>
+      </div>
+
+      <!-- Forgot password -->
+      <div style="text-align:right;margin-bottom:16px;">
+        <span onclick="forgotPassword()" style="font-size:11px;color:#c084fc;cursor:pointer;font-family:'Outfit',sans-serif;">Forgot password?</span>
+      </div>
+
+      <!-- Error -->
+      <div id="authError" style="display:none;background:#3a0e0e;border:1px solid #f8717155;border-radius:9px;padding:9px 12px;font-size:12px;color:#f87171;margin-bottom:14px;font-family:'Outfit',sans-serif;"></div>
+
+      <!-- Sign in button -->
+      <button id="authSubmitBtn" onclick="signInEmail()" disabled style="width:100%;padding:13px;background:linear-gradient(135deg,#c084fc,#7c3aed);border:none;border-radius:12px;color:#fff;font-size:15px;font-weight:800;font-family:'Outfit',sans-serif;cursor:pointer;margin-bottom:12px;opacity:.6;">Connecting…</button>
+
+      <!-- Divider -->
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+        <div style="flex:1;height:1px;background:#2e2850;"></div>
+        <span style="font-size:11px;color:#5a5070;font-family:'Outfit',sans-serif;">or</span>
+        <div style="flex:1;height:1px;background:#2e2850;"></div>
+      </div>
+
+      <!-- Google button -->
+      <button id="googleBtn" onclick="signInGoogle()" disabled style="width:100%;padding:12px;background:#1a1530;border:1px solid #2e2850;border-radius:12px;color:#f0ebff;font-size:14px;font-weight:700;font-family:'Outfit',sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;opacity:.6;">
+        <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+        Continue with Google
+      </button>
+
+      <div style="text-align:center;margin-top:16px;font-size:11px;color:#5a5070;font-family:'Outfit',sans-serif;">New? Just enter email + password to create account</div>
+    </div>
+  </div>
+</div>
+
+<div id="app" style="display:none;"><!-- display toggled by Firebase auth -->
+
+<!-- HEADER -->
+<div class="hdr">
+  <div class="logo">
+    <div class="logo-ic">🎤</div>
+    <div>
+      <div class="logo-tx">Guru<b>Ji</b></div>
+      <div class="logo-sub" id="hdrSub">Singing Teacher</div>
+    </div>
+  </div>
+  <div class="hdr-r">
+    <div class="hdr-badge" id="hdrDate"></div>
+    <div title="Firebase sync" style="width:8px;height:8px;border-radius:50%;background:#34d399;flex-shrink:0;margin-right:2px;box-shadow:0 0 6px #34d39988;" id="fbDot"></div>
+    <div class="hdr-btn" onclick="nav('alerts')" id="bellBtn">🔔<div class="bell-dot" id="bellDot"></div></div>
+    <div onclick="showUserMenu()" style="cursor:pointer;display:flex;align-items:center;gap:6px;" title="Account">
+      <img id="userPhoto" src="" style="display:none;width:28px;height:28px;border-radius:50%;border:2px solid var(--acc)44;object-fit:cover;"/>
+      <div id="userAvatarFallback" style="width:28px;height:28px;border-radius:50%;background:var(--acc)22;border:1px solid var(--acc)44;display:flex;align-items:center;justify-content:center;font-size:13px;">👤</div>
+    </div>
+  </div>
+</div>
+
+<div class="scroll" id="scrollEl">
+
+  <!-- ══ DASHBOARD ══ -->
+  <div class="pg on" id="pg-dash">
+    <div class="hero">
+      <div class="hero-lbl">📅 <span id="heroM"></span> — Overview</div>
+      <div class="hero-val" id="heroV">₹0</div>
+      <div class="hero-sub" id="heroS">Total collected this month</div>
+      <div class="hero-row">
+        <div class="hm"><div class="hm-v" style="color:var(--acc)" id="hm-s">0</div><div class="hm-l">Students</div></div>
+        <div class="hm"><div class="hm-v" style="color:var(--grn)" id="hm-c">0</div><div class="hm-l">Classes Today</div></div>
+        <div class="hm"><div class="hm-v" style="color:var(--red)" id="hm-d">0</div><div class="hm-l">Dues</div></div>
+      </div>
+    </div>
+    <div class="sgrid">
+      <div class="stt p"><div class="stt-l">Collected</div><div class="stt-v p" id="dc">₹0</div><div class="stt-s">this month</div></div>
+      <div class="stt r"><div class="stt-l">Total Dues</div><div class="stt-v r" id="dd">₹0</div><div class="stt-s">all pending</div></div>
+      <div class="stt g"><div class="stt-l">Advances</div><div class="stt-v g" id="da">₹0</div><div class="stt-s">held balance</div></div>
+      <div class="stt b"><div class="stt-l">This Month</div><div class="stt-v b" id="dm">0</div><div class="stt-s">classes done</div></div>
+    </div>
+    <div class="s-hdr"><div class="s-ttl">🎵 Today's Classes</div><div class="s-act" onclick="nav('sch')">Full Schedule →</div></div>
+    <div id="feeBanner" style="padding:0 14px"></div>
+    <div id="todayClasses"></div>
+    <div class="s-hdr"><div class="s-ttl">⚠ Dues</div><div class="s-act" onclick="nav('stu')">All Students →</div></div>
+    <div id="dashDues"></div>
+  </div>
+
+  <!-- ══ STUDENTS ══ -->
+  <div class="pg" id="pg-stu">
+    <div class="srch-wrap">
+      <div class="srch-rel">
+        <span class="srch-ic">🔍</span>
+        <input class="srch-in" id="srchIn" placeholder="Search student, raga, level…" oninput="renderStu()"/>
+      </div>
+    </div>
+    <div class="chips">
+      <div class="chip-f on" onclick="setChip('all',this)">All</div>
+      <div class="chip-f" onclick="setChip('due',this)">Due</div>
+      <div class="chip-f" onclick="setChip('advance',this)">Advance</div>
+      <div class="chip-f" onclick="setChip('monthly',this)">Monthly</div>
+      <div class="chip-f" onclick="setChip('perclass',this)">Per Class</div>
+      <div class="chip-f" onclick="setChip('package',this)">Package</div>
+    </div>
+    <div id="stuList"></div>
+    <div class="empty" id="stuEmpty" style="display:none"><div class="empty-ic">🎤</div>No students found</div>
+  </div>
+
+  <!-- ══ SCHEDULE ══ -->
+  <div class="pg" id="pg-sch">
+    <div style="display:flex;align-items:center;padding:10px 14px 0;gap:8px;">
+      <button onclick="shiftWeek(-7)"
+        style="width:34px;height:34px;border-radius:10px;background:var(--surf2);border:1px solid var(--bdr);color:var(--txt2);font-size:18px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .15s;">‹</button>
+      <div id="weekMonthLbl" style="flex:1;text-align:center;font-size:13px;font-weight:700;color:var(--txt2);"></div>
+      <button onclick="shiftWeek(0)"
+        style="padding:5px 12px;border-radius:8px;background:var(--acc)20;border:1px solid var(--acc)44;color:var(--acc);font-size:11px;cursor:pointer;font-weight:700;flex-shrink:0;">Today</button>
+      <button onclick="shiftWeek(7)"
+        style="width:34px;height:34px;border-radius:10px;background:var(--surf2);border:1px solid var(--bdr);color:var(--txt2);font-size:18px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .15s;">›</button>
+    </div>
+    <div class="week-strip" id="weekStrip"></div>
+    <div class="s-hdr">
+      <div class="s-ttl" id="schDayLbl">Today's Schedule</div>
+      <div class="s-act" onclick="openAddClass()">+ Add Class</div>
+    </div>
+    <div class="sch-list" id="schList"></div>
+  </div>
+
+  <!-- ══ DETAIL ══ -->
+  <div class="pg" id="pg-det"></div>
+
+  <!-- ══ FORM ══ -->
+  <div class="pg" id="pg-form">
+    <div class="fw">
+      <div class="fttl" id="fTtl">Add Student</div>
+      <div class="fsub-txt" id="fSub">Fill in student details</div>
+      <div class="fg"><label class="fl">Student Name *</label><input class="fi" id="fn" placeholder="e.g. Priya Sharma"/></div>
+      <div class="fg"><label class="fl">Emergency Contact</label><input class="fi" id="fcon" placeholder="e.g. Friend or emergency contact"/></div>
+      <div class="fg"><label class="fl">Mobile Number *</label><input class="fi" id="fmob" type="tel" inputmode="numeric" placeholder="9876543210"/></div>
+      <div class="frow">
+        <div class="fg"><label class="fl">Level</label>
+          <select class="fs" id="flevel"><option>Beginner</option><option>Intermediate</option><option>Advanced</option></select>
+        </div>
+        <div class="fg"><label class="fl">Voice Type</label>
+          <select class="fs" id="fvoice"><option>Not set</option><option>Soprano</option><option>Alto</option><option>Tenor</option><option>Baritone</option><option>Bass</option></select>
+        </div>
+      </div>
+      <div class="fg"><label class="fl">Class Type</label>
+        <select class="fs" id="fctype"><option value="online">Online (Google Meet)</option><option value="offline">Offline (In-person)</option><option value="both">Both</option></select>
+      </div>
+      <div class="fg" id="fmeetWrap"><label class="fl">Google Meet Link</label><input class="fi" id="fmeet" placeholder="https://meet.google.com/xxx-xxx-xxx"/></div>
+      <div class="fg">
+        <label class="fl">Class Days</label>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:4px;" id="fdays-chips">
+          <div class="day-chip" data-day="Mon" onclick="toggleDay('Mon',this)">Mon</div>
+          <div class="day-chip" data-day="Tue" onclick="toggleDay('Tue',this)">Tue</div>
+          <div class="day-chip" data-day="Wed" onclick="toggleDay('Wed',this)">Wed</div>
+          <div class="day-chip" data-day="Thu" onclick="toggleDay('Thu',this)">Thu</div>
+          <div class="day-chip" data-day="Fri" onclick="toggleDay('Fri',this)">Fri</div>
+          <div class="day-chip" data-day="Sat" onclick="toggleDay('Sat',this)">Sat</div>
+          <div class="day-chip" data-day="Sun" onclick="toggleDay('Sun',this)">Sun</div>
+          <div class="day-chip" data-day="Daily" onclick="toggleDay('Daily',this)" style="padding:8px 14px;">Daily</div>
+        </div>
+        <input type="hidden" id="fdays"/>
+        <div id="fdays-summary" style="font-size:11px;color:var(--acc);margin-top:6px;font-weight:700;"></div>
+      </div>
+      <div class="frow">
+        <div class="fg">
+          <label class="fl">Class Time</label>
+          <div class="tp-wrap">
+            <div class="tp-display" onclick="toggleTP('ftime')">
+              <span class="tp-display-val empty" id="tp-ftime-val">Select time</span>
+              <span class="tp-display-ic">🕐</span>
+            </div>
+            <div class="tp-panel" id="tp-ftime-panel"></div>
+          </div>
+          <input type="hidden" id="ftime"/>
+        </div>
+        <div class="fg"><label class="fl">Duration (mins)</label><input class="fi" id="fdur" type="number" placeholder="45" inputmode="numeric" oninput="updateClassCostSummary()"/></div>
+      </div>
+      <!-- Class cost summary -->
+      <div id="fclsSummary" style="display:none;background:var(--surf2);border:1px solid var(--acc)33;border-radius:12px;padding:12px 14px;margin-bottom:4px;">
+        <div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--txt3);margin-bottom:8px;">📊 Weekly Schedule</div>
+        <div style="display:flex;gap:16px;flex-wrap:wrap;">
+          <div><div style="font-size:18px;font-weight:900;font-family:var(--mono);color:var(--acc)" id="fclsPerWeek">0</div><div style="font-size:10px;color:var(--txt3)">classes/week</div></div>
+          <div><div style="font-size:18px;font-weight:900;font-family:var(--mono);color:var(--grn)" id="fclsPerMonth">0</div><div style="font-size:10px;color:var(--txt3)">classes/month</div></div>
+          <div><div style="font-size:18px;font-weight:900;font-family:var(--mono);color:var(--ylw)" id="fclsHrsMonth">0h</div><div style="font-size:10px;color:var(--txt3)">hours/month</div></div>
+          <div id="fclsCostWrap" style="display:none"><div style="font-size:18px;font-weight:900;font-family:var(--mono);color:var(--gold)" id="fclsCostMonth">₹0</div><div style="font-size:10px;color:var(--txt3)">cost/month</div></div>
+        </div>
+      </div>
+      <div class="fg">
+        <label class="fl">Fee Structure *</label>
+        <div class="fee-type-row">
+          <div class="fee-type-btn on" id="ft-monthly" onclick="setFeeType('monthly')">📅 Monthly</div>
+          <div class="fee-type-btn" id="ft-perclass" onclick="setFeeType('perclass')">🎵 Per Class</div>
+          <div class="fee-type-btn" id="ft-package" onclick="setFeeType('package')">📦 Package</div>
+        </div>
+      </div>
+      <div class="fg" id="fMonthlyWrap"><label class="fl">Monthly Fee (₹) *</label><input class="fi" id="ffee" type="number" placeholder="e.g. 2000" inputmode="numeric"/></div>
+      <div class="fg" id="fPerClassWrap" style="display:none"><label class="fl">Per Class Fee (₹) *</label><input class="fi" id="ffeepc" type="number" placeholder="e.g. 300" inputmode="numeric"/></div>
+      <div id="fPackageWrap" style="display:none">
+        <div class="frow">
+          <div class="fg"><label class="fl">Package Classes</label><input class="fi" id="fpkgcls" type="number" placeholder="e.g. 10" inputmode="numeric"/></div>
+          <div class="fg"><label class="fl">Package Fee (₹)</label><input class="fi" id="fpkgfee" type="number" placeholder="e.g. 2500" inputmode="numeric"/></div>
+        </div>
+      </div>
+      <div class="fg"><label class="fl">Joining Date</label><input class="fi" id="fjd" type="date"/></div>
+      <div class="fg"><label class="fl">Advance Paid (₹)</label><input class="fi" id="fadv" type="number" placeholder="0" inputmode="numeric"/></div>
+      <div class="fg"><label class="fl">Notes</label><textarea class="fta" id="fnotes" placeholder="Any extra notes…"></textarea></div>
+      <button class="fsave" onclick="saveStu()">Save Student</button>
+      <button class="fcancel" onclick="goBack()">Cancel</button>
+    </div>
+  </div>
+
+  <!-- ══ BATCHES ══ -->
+  <div class="pg" id="pg-batch">
+    <div class="s-hdr">
+      <div class="s-ttl">🎭 Batches</div>
+      <div class="s-act" onclick="openAddBatch()">+ New Batch</div>
+    </div>
+    <div id="batchList"></div>
+    <div class="empty" id="batchEmpty" style="display:none">
+      <div class="empty-ic">🎭</div>No batches yet.<br>Tap + to create one.
+    </div>
+  </div>
+
+  <!-- ══ REPORTS ══ -->
+  <div class="pg" id="pg-rep">
+    <div class="rep-tabs">
+      <div class="rtab on" onclick="showRT('month',this)">This Month</div>
+      <div class="rtab" onclick="showRT('dues',this)">All Dues</div>
+      <div class="rtab" onclick="showRT('alltime',this)">All-Time</div>
+    </div>
+    <div id="repContent"></div>
+  </div>
+
+  <!-- ══ ALERTS ══ -->
+  <div class="pg" id="pg-alerts">
+    <div class="s-hdr"><div class="s-ttl">🔔 Dues & Reminders</div></div>
+    <div id="alertsContent"></div>
+  </div>
+
+  <!-- ══ SETTINGS ══ -->
+  <div class="pg" id="pg-set">
+    <div class="s-hdr"><div class="s-ttl">⚙️ Settings</div></div>
+
+    <!-- THEME -->
+    <div class="set-section">
+      <div class="set-sec-hdr">🎨 Theme</div>
+      <div style="padding:12px 14px;" id="themeGrid"></div>
+    </div>
+
+    <div class="set-section" id="avail-section">
+      <div class="set-sec-hdr">🕐 Teaching Availability</div>
+      <div style="padding:10px 14px;font-size:11px;color:var(--txt3);border-bottom:1px solid var(--bdr);">Set your available teaching hours for each day. Shown on dashboard.</div>
+      <div id="availRows"></div>
+      <div style="padding:10px 14px;">
+        <button class="set-btn prim" onclick="saveAvailability()">Save Availability</button>
+      </div>
+    </div>
+
+    <div class="set-section">
+      <div class="set-sec-hdr">🎤 Teacher Info</div>
+      <div class="set-row col"><div><div class="set-lbl">Teacher Name</div><div class="set-sub">Shown in WhatsApp messages</div></div><input class="set-in" id="s-teacher" placeholder="e.g. Shree Prithvi Raj sir" oninput="settingsChanged()"/></div>
+      <div class="set-row col"><div><div class="set-lbl">Academy / Class Name</div></div><input class="set-in" id="s-inst" placeholder="e.g. Sai Spandana Academy" oninput="settingsChanged()"/></div>
+      <div class="set-row col"><div><div class="set-lbl">Your WhatsApp Number</div></div><input class="set-in" id="s-mynum" type="tel" inputmode="numeric" placeholder="9876543210" oninput="settingsChanged()"/></div>
+      <div class="set-row col"><div><div class="set-lbl">Currency Symbol</div></div><input class="set-in" id="s-curr" placeholder="₹" style="max-width:80px" oninput="settingsChanged()"/></div>
+    </div>
+    <div class="set-section">
+      <div class="set-sec-hdr">💬 WhatsApp Templates</div>
+      <div class="set-row col">
+        <div><div class="set-lbl">Fee Reminder</div><div class="set-sub">Variables: {student} {fee} {month} {balance} {teacher} {institute} {meet}</div></div>
+        <textarea class="set-ta" id="s-tpl-fee" oninput="settingsChanged()"></textarea>
+      </div>
+      <div class="set-row col">
+        <div><div class="set-lbl">Class Reminder</div><div class="set-sub">Sent before class with Meet link</div></div>
+        <textarea class="set-ta" id="s-tpl-class" oninput="settingsChanged()"></textarea>
+      </div>
+      <div class="set-row col">
+        <div><div class="set-lbl">Homework</div><div class="set-sub">Send homework assignment via WA</div></div>
+        <textarea class="set-ta" id="s-tpl-hw" oninput="settingsChanged()"></textarea>
+      </div>
+      <div class="set-row col">
+        <div><div class="set-lbl">Payment Confirmation</div></div>
+        <textarea class="set-ta" id="s-tpl-confirm" oninput="settingsChanged()"></textarea>
+      </div>
+    </div>
+    <div class="set-section">
+      <div class="set-sec-hdr">💾 Data</div>
+      <div class="set-row"><div><div class="set-lbl">Export Backup</div></div><button class="set-btn grn" onclick="exportData()">📤 Export</button></div>
+      <div class="set-row"><div><div class="set-lbl">Import Backup</div></div><button class="set-btn prim" onclick="document.getElementById('importFile').click()">📥 Import</button><input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(this)"/></div>
+      <div class="set-row"><div><div class="set-lbl">Clear All Data</div></div><button class="set-btn danger" onclick="confirmClearAll()">🗑️ Clear</button></div>
+    </div>
+    <div class="set-section">
+      <div class="set-sec-hdr">ℹ️ App Info</div>
+      <div class="set-row"><span class="set-lbl">Version</span><span class="set-val">GuruJi v1.0</span></div>
+      <div class="set-row"><span class="set-lbl">Students</span><span class="set-val" id="si-stus">0</span></div>
+      <div class="set-row"><span class="set-lbl">Payments</span><span class="set-val" id="si-pays">0</span></div>
+    </div>
+    <div style="padding:16px;"><button class="fsave" id="saveSetBtn" onclick="saveSettings()" style="opacity:.5;cursor:default" disabled>Settings Saved ✓</button></div>
+    <div style="height:16px"></div>
+  </div>
+
+</div><!-- /scroll -->
+
+<!-- BOTTOM NAV -->
+<div class="bnav">
+  <button class="nb on" id="nb-dash"    onclick="nav('dash')"><span class="ni">🏠</span>Home</button>
+  <button class="nb"    id="nb-stu"     onclick="nav('stu')"><span class="ni">👥</span>Students</button>
+  <button class="nb"    id="nb-batch"   onclick="nav('batch')"><span class="ni">🎭</span>Batches</button>
+  <button class="nb"    id="nb-sch"     onclick="nav('sch')"><span class="ni">📅</span>Schedule</button>
+  <button class="nb"    id="nb-set"     onclick="nav('set')"><span class="ni">⚙️</span>Settings</button>
+</div>
+</div>
+
+<!-- PAYMENT MODAL -->
+<div class="ov" id="payOv">
+  <div class="modal">
+    <div class="modal-drag"></div>
+    <div class="modal-ttl">Record Payment <button class="mcls" onclick="closeOv('payOv')">✕ close</button></div>
+    <div id="payBar" style="background:var(--surf2);border:1px solid var(--bdr);border-radius:10px;padding:10px 12px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;">
+      <div id="payName" style="font-size:13px;font-weight:800;"></div>
+      <div id="payDue" style="font-size:12px;font-family:var(--mono);font-weight:700;color:var(--red);"></div>
+    </div>
+    <div class="fg"><label class="fl">Amount (₹) *</label><input class="fi" id="pamt" type="number" inputmode="numeric" placeholder="0"/></div>
+    <div class="fg"><label class="fl">Type</label>
+      <select class="fs" id="ptype"><option value="fee">Fee Payment</option><option value="advance">Advance</option></select>
+    </div>
+    <div class="fg"><label class="fl">Payment Mode</label>
+      <select class="fs" id="pmode"><option>Cash</option><option>UPI</option><option>Bank Transfer</option><option>Cheque</option></select>
+    </div>
+    <div class="fg"><label class="fl">Note (optional)</label><input class="fi" id="pnote" placeholder="e.g. for March…"/></div>
+    <div class="fg" style="display:flex;align-items:center;gap:10px;padding:4px 0">
+      <label class="tog-sw" style="flex-shrink:0"><input type="checkbox" id="sendConfirmChk"><span class="tog-sl"></span></label>
+      <div style="font-size:12px;font-weight:700;">Send WhatsApp confirmation</div>
+    </div>
+    <button class="fsave" onclick="savePay()">Record Payment ✓</button>
+  </div>
+</div>
+
+<!-- HOMEWORK MODAL -->
+<div class="ov" id="hwOv">
+  <div class="modal">
+    <div class="modal-drag"></div>
+    <div class="modal-ttl" id="hwTitle">Assign Homework <button class="mcls" onclick="closeOv('hwOv')">✕ close</button></div>
+    <div class="fg"><label class="fl">Homework / Practice Task *</label><textarea class="fta" id="hwText" placeholder="e.g. Practise Yaman Raga — Aroha Avaroha 10 times daily. Focus on Ga note…"></textarea></div>
+    <div class="fg"><label class="fl">Due Date</label><input class="fi" id="hwDue" type="date"/></div>
+    <button class="fsave" onclick="saveHW()">Save & Send via WhatsApp</button>
+    <button class="fcancel" onclick="saveHWOnly()">Save Only (no WA)</button>
+  </div>
+</div>
+
+<!-- PROGRESS MODAL -->
+<div class="ov" id="progOv">
+  <div class="modal">
+    <div class="modal-drag"></div>
+    <div class="modal-ttl" id="progTitle">Add Song/Raga Progress <button class="mcls" onclick="closeOv('progOv')">✕ close</button></div>
+    <div class="fg"><label class="fl">Song / Raga Name *</label><input class="fi" id="progName" placeholder="e.g. Yaman Raga, Sur Ni Dhaga…"/></div>
+    <div class="fg"><label class="fl">Progress (0–100%)</label><input class="fi" id="progPct" type="number" min="0" max="100" placeholder="e.g. 60" inputmode="numeric"/></div>
+    <div class="fg"><label class="fl">Notes</label><input class="fi" id="progNote" placeholder="e.g. Working on Ga note, needs more practice…"/></div>
+    <button class="fsave" onclick="saveProg()">Save Progress</button>
+  </div>
+</div>
+
+<!-- ATTENDANCE MODAL -->
+<div class="ov" id="attOv">
+  <div class="modal">
+    <div class="modal-drag"></div>
+    <div class="modal-ttl" id="attTitle">Mark Attendance <button class="mcls" onclick="closeOv('attOv')">✕ close</button></div>
+    <div style="display:flex;gap:10px;margin-bottom:16px;">
+      <button class="fsave" style="flex:1;background:linear-gradient(135deg,var(--grn),#16a34a)" onclick="markAtt('present')">✅ Present</button>
+      <button class="fsave" style="flex:1;background:linear-gradient(135deg,var(--red),#dc2626)" onclick="markAtt('absent')">❌ Absent</button>
+    </div>
+    <button class="fcancel" onclick="closeOv('attOv')">Cancel</button>
+  </div>
+</div>
+
+<!-- WA PREVIEW MODAL -->
+<div class="ov" id="waOv">
+  <div class="modal">
+    <div class="modal-drag"></div>
+    <div class="modal-ttl">WhatsApp Preview <button class="mcls" onclick="closeOv('waOv')">✕ close</button></div>
+    <div class="tpl-preview" id="waPreviewText" style="font-size:13px;margin-bottom:16px"></div>
+    <button class="fsave" style="background:linear-gradient(135deg,#25D366,#1da851)" id="waConfirmBtn">📱 Open WhatsApp</button>
+    <button class="fcancel" onclick="closeOv('waOv')">Cancel</button>
+  </div>
+</div>
+
+<!-- DELETE CONFIRM MODAL -->
+<div class="ov" id="delOv">
+  <div class="modal">
+    <div class="modal-drag"></div>
+    <div class="modal-ttl">Confirm Delete</div>
+    <div style="font-size:14px;color:var(--txt2);margin-bottom:20px;line-height:1.6" id="delMsg"></div>
+    <button class="fsave" style="background:linear-gradient(135deg,var(--red),#dc2626)" id="delConfirmBtn">Yes, Delete</button>
+    <button class="fcancel" onclick="closeOv('delOv')">Cancel</button>
+  </div>
+</div>
+
+<!-- ADD BATCH MODAL -->
+<div class="ov" id="addBatchOv">
+  <div class="modal">
+    <div class="modal-drag"></div>
+    <div class="modal-ttl" id="addBatchTitle">Create Batch <button class="mcls" onclick="closeOv('addBatchOv')">✕ close</button></div>
+    <div class="fg"><label class="fl">Batch Name *</label><input class="fi" id="batch-name" placeholder="e.g. Beginner Batch, Bhajan Group…"/></div>
+    <div class="fg"><label class="fl">Subject / Style</label><input class="fi" id="batch-subj" placeholder="e.g. Hindustani Classical, Bhajan…"/></div>
+    <div class="fg"><label class="fl">Schedule</label><input class="fi" id="batch-days" placeholder="e.g. Mon, Wed, Fri · 6:00 PM"/></div>
+    <div class="fg"><label class="fl">Max Students</label><input class="fi" id="batch-max" type="number" placeholder="e.g. 8" inputmode="numeric"/></div>
+    <div class="fg">
+      <label class="fl">Add Students</label>
+      <div id="batch-stu-checkboxes" style="display:flex;flex-direction:column;gap:8px;max-height:200px;overflow-y:auto;background:var(--surf2);border:1px solid var(--bdr);border-radius:11px;padding:10px 12px;"></div>
+    </div>
+    <button class="fsave" onclick="saveBatch()">Save Batch</button>
+    <button class="fcancel" onclick="closeOv('addBatchOv')">Cancel</button>
+  </div>
+</div>
+
+<!-- BATCH ATTENDANCE MODAL -->
+<div class="ov" id="batchAttOv">
+  <div class="modal">
+    <div class="modal-drag"></div>
+    <div class="modal-ttl" id="batchAttTitle">Batch Attendance <button class="mcls" onclick="closeOv('batchAttOv')">✕ close</button></div>
+    <div id="batchAttList" style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px;"></div>
+    <button class="fsave" onclick="saveBatchAtt()">Save Attendance ✓</button>
+  </div>
+</div>
+
+<!-- RESCHEDULE MODAL -->
+<div class="ov" id="reschedOv">
+  <div class="modal">
+    <div class="modal-drag"></div>
+    <div class="modal-ttl" id="reschedTitle">Reschedule Class <button class="mcls" onclick="closeOv('reschedOv')">✕ close</button></div>
+    <div style="background:var(--surf2);border:1px solid var(--bdr);border-radius:10px;padding:10px 13px;margin-bottom:14px;font-size:13px;color:var(--txt2)" id="reschedInfo"></div>
+    <div class="fg"><label class="fl">New Date</label><input class="fi" id="resched-date" type="date"/></div>
+    <div class="fg">
+      <label class="fl">New Time</label>
+      <div class="tp-wrap">
+        <div class="tp-display" onclick="toggleTP('resched-time')">
+          <span class="tp-display-val empty" id="tp-resched-time-val">Select time</span>
+          <span class="tp-display-ic">🕐</span>
+        </div>
+        <div class="tp-panel" id="tp-resched-time-panel"></div>
+      </div>
+      <input type="hidden" id="resched-time"/>
+    </div>
+    <div class="fg"><label class="fl">Reason (optional)</label><input class="fi" id="resched-reason" placeholder="e.g. Teacher unavailable, holiday…"/></div>
+    <div class="fg" style="display:flex;align-items:center;gap:10px;padding:4px 0">
+      <label class="tog-sw" style="flex-shrink:0"><input type="checkbox" id="resched-notify" checked><span class="tog-sl"></span></label>
+      <div style="font-size:12px;font-weight:700;">Notify student via WhatsApp</div>
+    </div>
+    <button class="fsave" onclick="saveResched()">Reschedule ✓</button>
+    <button class="fcancel" onclick="closeOv('reschedOv')">Cancel</button>
+  </div>
+</div>
+
+<!-- ADD CLASS MODAL -->
+<div class="ov" id="addClassOv">
+  <div class="modal">
+    <div class="modal-drag"></div>
+    <div class="modal-ttl">Add Class Slot <button class="mcls" onclick="closeOv('addClassOv')">✕ close</button></div>
+    <div class="fg">
+      <label class="fl">Student *</label>
+      <div style="position:relative;">
+        <input class="fi" id="cls-stu-search" placeholder="🔍 Search student…" oninput="filterStuDropdown()" onclick="showStuDropdown()" autocomplete="off"
+          style="margin-bottom:0"/>
+        <input type="hidden" id="cls-stu"/>
+        <div id="cls-stu-list" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:999;
+          background:var(--surf2);border:1px solid var(--acc);border-top:none;border-radius:0 0 11px 11px;
+          max-height:180px;overflow-y:auto;box-shadow:0 8px 20px #00000066;"></div>
+      </div>
+    </div>
+    <div class="fg"><label class="fl">Date</label><input class="fi" id="cls-date" type="date"/></div>
+    <div class="frow">
+      <div class="fg">
+        <label class="fl">Start Time *</label>
+        <div class="tp-wrap" id="tp-cls-time-wrap">
+          <div class="tp-display" onclick="toggleTP('cls-time')">
+            <span class="tp-display-val empty" id="tp-cls-time-val">Select time</span>
+            <span class="tp-display-ic">🕐</span>
+          </div>
+          <div class="tp-panel" id="tp-cls-time-panel"></div>
+        </div>
+        <input type="hidden" id="cls-time"/>
+      </div>
+      <div class="fg"><label class="fl">Duration (mins)</label><input class="fi" id="cls-dur" type="number" placeholder="45" inputmode="numeric"/></div>
+    </div>
+    <div class="fg"><label class="fl">Type</label>
+      <select class="fs" id="cls-type"><option value="online">Online</option><option value="offline">Offline</option></select>
+    </div>
+    <div class="fg"><label class="fl">Meet Link (optional)</label><input class="fi" id="cls-meet" placeholder="https://meet.google.com/…"/></div>
+    <div class="fg"><label class="fl">Topic / Raga</label><input class="fi" id="cls-topic" placeholder="e.g. Yaman Raga — Alaap"/></div>
+    <button class="fsave" onclick="saveClass()">Save Class</button>
+  </div>
+</div>
+
+<!-- USER MENU -->
+<div class="ov" id="userMenuOv">
+  <div class="modal" style="max-width:320px;">
+    <div class="modal-drag"></div>
+    <div style="text-align:center;padding:8px 0 16px;">
+      <img id="userMenuPhoto" src="" style="display:none;width:64px;height:64px;border-radius:50%;border:3px solid var(--acc)55;object-fit:cover;margin:0 auto 10px;"/>
+      <div id="userMenuAvatar" style="width:64px;height:64px;border-radius:50%;background:var(--acc)20;border:2px solid var(--acc)44;display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto 10px;">👤</div>
+      <div style="font-size:15px;font-weight:800;" id="userMenuName"></div>
+      <div style="font-size:12px;color:var(--txt3);margin-top:3px;" id="userMenuEmail"></div>
+    </div>
+    <div style="background:var(--surf2);border-radius:12px;overflow:hidden;margin-bottom:14px;">
+      <div style="padding:11px 14px;font-size:13px;color:var(--txt2);display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--bdr);">
+        <span>🔥</span><span>Connected to Firebase</span>
+        <span style="margin-left:auto;width:8px;height:8px;border-radius:50%;background:var(--grn);display:inline-block;"></span>
+      </div>
+      <div style="padding:11px 14px;font-size:13px;color:var(--txt2);display:flex;align-items:center;gap:10px;">
+        <span>🌐</span><span id="userMenuProvider"></span>
+      </div>
+    </div>
+    <button onclick="closeOv('userMenuOv');signOut()" style="width:100%;padding:12px;background:var(--red)18;border:1px solid var(--red)44;border-radius:12px;color:var(--red);font-size:14px;font-weight:800;font-family:var(--font);cursor:pointer;">Sign Out</button>
+    <button class="fcancel" onclick="closeOv('userMenuOv')">Close</button>
+  </div>
+</div>
+
+<!-- FIREBASE LOADING -->
+<div id="fbLoadingOv" style="position:fixed;inset:0;z-index:999999;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;">
+  <div style="font-size:48px;animation:namasteBow 1s ease infinite alternate;">🔥</div>
+  <div style="font-size:16px;font-weight:800;font-family:'Outfit',sans-serif;color:#c084fc;">GuruJi</div>
+  <div style="font-size:13px;color:#9d8ec0;font-family:'Outfit',sans-serif;">Connecting to Firebase…</div>
+  <div style="width:120px;height:3px;background:#2a2448;border-radius:2px;overflow:hidden;">
+    <div style="height:100%;background:linear-gradient(90deg,#c084fc,#a855f7);border-radius:2px;animation:fbLoad 1.5s ease-in-out infinite;"></div>
+  </div>
+</div>
+
+<button id="fab" onclick="openAdd()">+</button>
+<div id="toast"></div>
+
+<!-- NAMASTE GREETING -->
+<div id="namasteOv" style="
+  position:fixed;inset:0;z-index:99999;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  background:var(--bg);
+  cursor:pointer;
+  animation:namasteIn .4s cubic-bezier(.22,.68,0,1.1);
+" onclick="closeNameste()">
+  <div style="text-align:center;padding:30px;user-select:none;">
+    <div style="font-size:72px;margin-bottom:16px;animation:namasteBow 1.2s ease infinite alternate;">🙏</div>
+    <div style="font-size:32px;font-weight:900;font-family:'Outfit',sans-serif;
+      background:linear-gradient(135deg,#c084fc,#f59e0b,#c084fc);
+      -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+      letter-spacing:1px;margin-bottom:8px;">Namaste Guru Ji</div>
+    <div id="namasteTeacher" style="font-size:16px;color:#9d8ec0;font-weight:600;margin-bottom:24px;font-family:'Outfit',sans-serif;"></div>
+    <div style="font-size:13px;color:#5a5070;font-family:'Outfit',sans-serif;">Tap anywhere to continue</div>
+  </div>
+  <!-- Floating notes -->
+  <div style="position:absolute;font-size:28px;top:12%;left:8%;opacity:.18;animation:floatNote1 3s ease-in-out infinite;">🎵</div>
+  <div style="position:absolute;font-size:22px;top:20%;right:10%;opacity:.15;animation:floatNote2 4s ease-in-out infinite;">🎶</div>
+  <div style="position:absolute;font-size:20px;bottom:25%;left:12%;opacity:.12;animation:floatNote1 5s ease-in-out infinite reverse;">♪</div>
+  <div style="position:absolute;font-size:26px;bottom:18%;right:8%;opacity:.16;animation:floatNote2 3.5s ease-in-out infinite;">🎤</div>
+</div>
+
+<script src="firebase.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
